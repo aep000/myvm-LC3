@@ -35,6 +35,40 @@ pub enum Conds
     FL_NEG = 1 << 2, /* N */
 }
 
+enum TrapCode
+{
+    GETC = 0x20,  /* get character from keyboard, not echoed onto the terminal */
+    OUT = 0x21,   /* output a character */
+    PUTS = 0x22,  /* output a word string */
+    IN = 0x23,    /* get character from keyboard, echoed onto the terminal */
+    PUTSP = 0x24, /* output a byte string */
+    HALT = 0x25   /* halt the program */
+}
+impl TrapCode{
+    pub fn run(&self, context: &mut Context, instr: &usize){
+        match self{
+            GETC => {
+
+            },  /* get character from keyboard, not echoed onto the terminal */
+            OUT => {
+
+            },   /* output a character */
+            PUTS => {
+
+            },  /* output a word string */
+            IN => {
+
+            },    /* get character from keyboard, echoed onto the terminal */
+            PUTSP => {
+
+            }, /* output a byte string */
+            HALT => {
+                
+            }
+        }
+    }
+}
+
 #[derive(Copy, Clone)]
 pub enum Instruction{
     BR = 0, /* branch */
@@ -170,7 +204,13 @@ impl Instruction{
                 context.Reg[dest] = context.Reg[RNum!(Registers::RPC)] + offset;
                 update_flags(dest, context);
             },    /* load effective address */
-            TRAP => {},    /* execute trap */
+            TRAP => {
+                let code = instr & 0xFF;
+                if code >= 0x20 && code <= 0x25{
+                    let code: TrapCode = unsafe { std::mem::transmute(code as i8) };
+                    code.run(context, &instr);
+                }
+            },    /* execute trap */
             ICOUNT => (),
         }
     }
