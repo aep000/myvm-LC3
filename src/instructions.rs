@@ -58,12 +58,17 @@ pub enum Instruction{
 }
 impl Instruction{
     pub fn Run(&self, context: &mut Context, instr: &u16){
+        let instr = *instr as usize;
         match self{
             BR => {
-
+                let conds = ((instr >> 9) & 0x7) as u16;
+                let offset = sign_extend((instr & 0x1ff) as u16, 9);
+                if(conds & context.Reg[RNum!(Registers::RCOND)] == conds){
+                    context.Reg[RNum!(Registers::RPC)] = context.Reg[RNum!(Registers::RPC)] + offset;
+                }
             }, /* branch */
             ADD => {
-                let instr = *instr as usize;
+
                 let dest = (instr >> 9) & 0x7;
                 let r1 = (instr >> 6) & 0x7; //first source reg
                 let immediatMode = (instr >> 5) & 0x1;
@@ -81,15 +86,30 @@ impl Instruction{
                 update_flags(dest, context);
             },    /* add  */
             LD => {
-                let instr = *instr as usize;
+
                 let dest = (instr >> 9) & 0x7;
                 let offset = sign_extend((instr & 0x1ff) as u16, 9); //Location in memory at Offset + PC which we are loading from
                 context.Reg[dest] = mem_read((context.Reg[RNum!(Registers::RPC)]+offset) as usize,context);
+                update_flags(dest, context);
             },     /* load */
-            ST => {},     /* store */
-            JSR => {},    /* jump register */
+            ST => {
+                let src = (instr >> 9) & 0x7;
+                let offset = sign_extend((instr & 0x1ff) as u16, 9);
+                context.Memory[(context.Reg[RNum!(Registers::RPC)]+offset) as usize]= context.Reg[src];
+            },     /* store */
+            JSR => {
+                let flag = (instr >> 11) & 0x1;
+                context.Reg[RNum!(Registers::R7)] = context.Reg[RNum!(Registers::RPC)];
+                if(flag == 0){
+                    let src = (instr >> 6) & 0x7;
+                    context.Reg[RNum!(Registers::RPC)] = context.Reg[src];
+                }
+                else{
+                    context.Reg[RNum!(Registers::RPC)] = context.Reg[RNum!(Registers::RPC)] + sign_extend((instr & 0x3ff) as u16, 11);
+                }
+            },    /* jump register */
             AND => {
-                let instr = *instr as usize;
+
                 let dest = (instr >> 9) & 0x7;
                 let r1 = (instr >> 6) & 0x7; //first source reg
                 let immediatMode = (instr >> 5) & 0x1;
@@ -107,26 +127,51 @@ impl Instruction{
                 update_flags(dest, context);
             },    /* bitwise and */
             LDR => {
-                let instr = *instr as usize;
+
                 let dest = (instr >> 9) & 0x7;
-                let offset = sign_extend((instr & 0x1ff) as u16, 9); //Location in memory at Offset + PC which we are loading from
-                context.Reg[dest] = mem_read((context.Reg[RNum!(Registers::RPC)]+offset) as usize,context);
+                let baseR = (instr >> 6) & 0x7;
+                let offset:u16 = sign_extend((instr & 0x3F) as u16, 6); //Location in memory at Offset + PC which we are loading from
+                context.Reg[dest] = mem_read(((context.Reg[baseR] as u16)+offset) as usize,context);
+                update_flags(dest, context);
             },    /* load register */
-            STR => {},    /* store register */
+            STR => {
+                let src = (instr >> 9) & 0x7;
+                let dest = (instr >> 6) & 0x7;
+                let offset = sign_extend((instr & 0x3F) as u16, 6);
+                context.Memory[(context.Reg[dest]+offset) as usize]= context.Reg[src];
+            },    /* store register */
             RTI => {},    /* unused */
-            NOT => {},    /* bitwise not */
+            NOT => {
+                let dest = (instr >> 9) & 0x7;
+                let src = (instr >> 6) & 0x7;
+                context.Reg[dest] = !context.Reg[src];
+                update_flags(dest, context);
+            },    /* bitwise not */
             LDI => {
-                let instr = *instr as usize;
+
                 let dest = (instr >> 9) & 0x7;
                 let offset = sign_extend((instr & 0x1ff) as u16, 9); //Location in memory at Offset + PC contains the location we are loading from
                 context.Reg[dest] = mem_read(mem_read(context.Reg[RNum!(Registers::RPC)] as usize,context) as usize,context);
+                update_flags(dest, context);
             },    /* load indirect */
-            STI => {},    /* store indirect */
-            JMP => {},    /* jump */
+            STI => {
+                let src = (instr >> 9) & 0x7;
+                let offset = sign_extend((instr & 0x1ff) as u16, 9);
+                context.Memory[context.Memory[(context.Reg[RNum!(Registers::RPC)]+offset) as usize] as usize]= context.Reg[src];
+            },    /* store indirect */
+            JMP => {
+                let src = (instr >> 6) & 0x7;
+                context.Reg[RNum!(Registers::RPC)] = context.Reg[src];
+            },    /* jump */
             RES => {},    /* reserved (unused) */
-            LEA => {},    /* load effective address */
+            LEA => {
+                let dest = (instr >> 9) & 0x7;
+                let offset = sign_extend((instr & 0x1ff) as u16, 9);
+                context.Reg[dest] = context.Reg[RNum!(Registers::RPC)] + offset;
+                update_flags(dest, context);
+            },    /* load effective address */
             TRAP => {},    /* execute trap */
-            ICOUNT => {},
+            ICOUNT => (),
         }
     }
 }
