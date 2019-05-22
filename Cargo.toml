@@ -1,0 +1,7 @@
+[package]
+name = "myvm"
+version = "0.1.0"
+authors = ["aep000 <alexparson1@gmail.com>"]
+edition = "2018"
+
+[dependencies]
