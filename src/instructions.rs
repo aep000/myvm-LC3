@@ -134,13 +134,13 @@ impl Instruction{
                 if (immediatMode == 1)
                 {
                     let imm5 = sign_extend((instr & 0x1F) as u16, 5); //Sign extend constant we are adding to register in immediate mode
-                    context.Reg[dest] = (context.Reg[r1] as u16) + (imm5 as u16);
+                    context.Reg[dest] = ((context.Reg[r1] as i16) + (imm5 as i16)) as u16;
                 }
                 else
                 {
                     let r2= instr & 0x7; //second source reg
                     //println!("r1:{a},r2:{b},dest:{c}",a=context.Reg[r1],b=context.Reg[r2],c=context.Reg[dest]);
-                    context.Reg[dest] = (context.Reg[r1] as u16) + (context.Reg[r2] as u16);
+                    context.Reg[dest] = ((context.Reg[r1] as i16) + (context.Reg[r2] as i16)) as u16;
                 }
                 update_flags(dest, context);
             },    /* add  */
@@ -260,7 +260,7 @@ impl Instruction{
         }
     }
 
-    pub fn fromOpcode(opcode:u16)->Instruction{
+    pub fn from_opcode(opcode:u16)->Instruction{
         match opcode{
             0 => Instruction::BR,
             1 => Instruction::ADD,

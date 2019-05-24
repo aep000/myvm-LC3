@@ -52,12 +52,9 @@ fn main() {
 
         context.Reg[RNum!(Registers::RPC)]+=1;
         let op = instr >> 12;
-        if op == 0{
-            break;
-        }
         //println!("{}",op);
         if(op< Instruction::ICOUNT as u16){
-            let op: Instruction = Instruction::fromOpcode(op);
+            let op: Instruction = Instruction::from_opcode(op);
             op.Run(&mut context,&instr);
         }
     }
