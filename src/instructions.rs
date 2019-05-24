@@ -139,6 +139,7 @@ impl Instruction{
                 else
                 {
                     let r2= instr & 0x7; //second source reg
+                    //println!("r1:{a},r2:{b},dest:{c}",a=context.Reg[r1],b=context.Reg[r2],c=context.Reg[dest]);
                     context.Reg[dest] = (context.Reg[r1] as u16) + (context.Reg[r2] as u16);
                 }
                 update_flags(dest, context);
